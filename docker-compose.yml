@@ -1,0 +1,153 @@
+services:
+
+  # ─────────────────────────────────────────────
+  # qBittorrent + OpenVPN (NordVPN)
+  # All torrent traffic goes through the VPN.
+  # Radarr/Sonarr reach it via internal network.
+  # ─────────────────────────────────────────────
+  qbittorrent:
+    image: binhex/arch-qbittorrentvpn:latest
+    container_name: qbittorrent
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    ports:
+      - "8080:8080"     # qBittorrent Web UI
+      - "8118:8118"     # Privoxy (optional, can be ignored)
+    volumes:
+      - ./config/qbittorrent:/config
+      - ./data/torrents:/data/torrents
+      - ./vpn:/config/openvpn   # Put your .ovpn files here
+    environment:
+      - VPN_ENABLED=yes
+      - VPN_PROV=custom          # NordVPN = custom provider
+      - VPN_CLIENT=openvpn
+      - VPN_USER=${NORDVPN_USER}
+      - VPN_PASS=${NORDVPN_PASS}
+      - STRICT_PORT_FORWARD=no
+      - ENABLE_PRIVOXY=no
+      - LAN_NETWORK=192.168.1.0/24   # ← adjust to your local subnet
+      - NAME_SERVERS=103.86.96.100,103.86.99.100  # NordVPN DNS
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - UMASK=002
+      - TZ=${TZ}
+    networks:
+      - medianet
+    restart: unless-stopped
+
+  # ─────────────────────────────────────────────
+  # Prowlarr — indexer manager
+  # Syncs trackers to Radarr + Sonarr automatically
+  # ─────────────────────────────────────────────
+  prowlarr:
+    image: lscr.io/linuxserver/prowlarr:latest
+    container_name: prowlarr
+    ports:
+      - "9696:9696"
+    volumes:
+      - ./config/prowlarr:/config
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - UMASK=002
+      - TZ=${TZ}
+    networks:
+      - medianet
+    restart: unless-stopped
+
+  # ─────────────────────────────────────────────
+  # Radarr — movie automation
+  # ─────────────────────────────────────────────
+  radarr:
+    image: lscr.io/linuxserver/radarr:latest
+    container_name: radarr
+    ports:
+      - "7878:7878"
+    volumes:
+      - ./config/radarr:/config
+      - ./data:/data          # needs full /data for hardlinks to work
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - UMASK=002
+      - TZ=${TZ}
+    networks:
+      - medianet
+    restart: unless-stopped
+
+  # ─────────────────────────────────────────────
+  # Sonarr — TV series automation
+  # ─────────────────────────────────────────────
+  sonarr:
+    image: lscr.io/linuxserver/sonarr:latest
+    container_name: sonarr
+    ports:
+      - "8989:8989"
+    volumes:
+      - ./config/sonarr:/config
+      - ./data:/data
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - UMASK=002
+      - TZ=${TZ}
+    networks:
+      - medianet
+    restart: unless-stopped
+
+  # ─────────────────────────────────────────────
+  # Bazarr — automatic subtitles
+  # ─────────────────────────────────────────────
+  bazarr:
+    image: lscr.io/linuxserver/bazarr:latest
+    container_name: bazarr
+    ports:
+      - "6767:6767"
+    volumes:
+      - ./config/bazarr:/config
+      - ./data/media:/data/media
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - UMASK=002
+      - TZ=${TZ}
+    networks:
+      - medianet
+    restart: unless-stopped
+
+  # ─────────────────────────────────────────────
+  # Jellyfin — media server with NVIDIA GPU
+  # ─────────────────────────────────────────────
+  jellyfin:
+    image: lscr.io/linuxserver/jellyfin:latest
+    container_name: jellyfin
+    ports:
+      - "8096:8096"     # Web UI
+      - "8920:8920"     # HTTPS (optional)
+    volumes:
+      - ./config/jellyfin:/config
+      - ./data/media:/data/media
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - UMASK=002
+      - TZ=${TZ}
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=all
+    runtime: nvidia           # enables NVIDIA GPU passthrough
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    networks:
+      - medianet
+    restart: unless-stopped
+
+networks:
+  medianet:
+    driver: bridge
