@@ -6,7 +6,7 @@ services:
   # Radarr/Sonarr reach it via internal network.
   # ─────────────────────────────────────────────
   qbittorrent:
-    image: binhex/arch-qbittorrentvpn:latest
+    image: binhex/arch-qbittorrentvpn:5.1.4-2-01
     container_name: qbittorrent
     cap_add:
       - NET_ADMIN
@@ -42,7 +42,7 @@ services:
   # Syncs trackers to Radarr + Sonarr automatically
   # ─────────────────────────────────────────────
   prowlarr:
-    image: lscr.io/linuxserver/prowlarr:latest
+    image: lscr.io/linuxserver/prowlarr:2.3.5.5327-ls141
     container_name: prowlarr
     ports:
       - "9696:9696"
@@ -61,7 +61,7 @@ services:
   # Radarr — movie automation
   # ─────────────────────────────────────────────
   radarr:
-    image: lscr.io/linuxserver/radarr:latest
+    image: lscr.io/linuxserver/radarr:6.1.1.10360-ls298
     container_name: radarr
     ports:
       - "7878:7878"
@@ -81,7 +81,7 @@ services:
   # Sonarr — TV series automation
   # ─────────────────────────────────────────────
   sonarr:
-    image: lscr.io/linuxserver/sonarr:latest
+    image: lscr.io/linuxserver/sonarr:4.0.17.2952-ls306
     container_name: sonarr
     ports:
       - "8989:8989"
@@ -101,7 +101,7 @@ services:
   # Bazarr — automatic subtitles
   # ─────────────────────────────────────────────
   bazarr:
-    image: lscr.io/linuxserver/bazarr:latest
+    image: lscr.io/linuxserver/bazarr:v1.5.6-ls342
     container_name: bazarr
     ports:
       - "6767:6767"
@@ -121,7 +121,7 @@ services:
   # Jellyfin — media server with NVIDIA GPU
   # ─────────────────────────────────────────────
   jellyfin:
-    image: lscr.io/linuxserver/jellyfin:latest
+    image: lscr.io/linuxserver/jellyfin:10.11.8ubu2404-ls27
     container_name: jellyfin
     ports:
       - "8096:8096"     # Web UI
