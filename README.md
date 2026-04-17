@@ -22,20 +22,6 @@ Torrent traffic is routed through NordVPN via OpenVPN.
 
 All ports are mapped `host:container` 1-to-1. Access any service from your LAN via `http://<host-ip>:<port>`.
 
----
-
-## Other Ports in Use on This Host (not managed by this stack)
-
-These are already occupied — do not remap the services above to any of them.
-
-| Port | Process | Notes |
-|------|---------|-------|
-| `80` | secret-hitler nginx | Public-facing web app |
-| `8000` | secret-hitler backend | Bound to `127.0.0.1` only |
-| `11434` | Ollama | Local LLM inference, `127.0.0.1` only |
-| `631` | CUPS | Print server, localhost only |
-| `1716` | KDE Connect | Device pairing |
-| `53` | systemd-resolved | DNS, localhost only |
 
 ---
 
