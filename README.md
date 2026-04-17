@@ -18,6 +18,7 @@ Torrent traffic is routed through NordVPN via OpenVPN.
 | `6767` | **Bazarr** | `lscr.io/linuxserver/bazarr:v1.5.6-ls342` | Automatic subtitle downloader for movies and series |
 | `8096` | **Jellyfin** | `lscr.io/linuxserver/jellyfin:10.11.8ubu2404-ls27` | Media server Web UI (HTTP) |
 | `8920` | **Jellyfin** | `lscr.io/linuxserver/jellyfin:10.11.8ubu2404-ls27` | Media server Web UI (HTTPS, optional) |
+| `8888` | **Homer** | `b4bz/homer:v24.05.1` | Homelab dashboard |
 
 All ports are mapped `host:container` 1-to-1. Access any service from your LAN via `http://<host-ip>:<port>`.
 
@@ -72,12 +73,17 @@ Place your `.ovpn` files in `./vpn/`. Radarr and Sonarr reach qBittorrent over t
 - Streams the media library to any device on your LAN (or remotely via a reverse proxy).
 Configured with NVIDIA GPU passthrough for hardware transcoding.
 
+### Homer (`homer`)
+- **URL:** `http://<host-ip>:8888`
+- **Default login:** none — public dashboard, no auth
+- Central dashboard linking all services. Config lives at `./config/homer/config.yml`.
+
 ---
 
 ## Quick Start
 
 ```bash
-cp .env.example .env   # fill in NORDVPN_USER, NORDVPN_PASS, PUID, PGID, TZ
+cp .env.sample .env   # fill in NORDVPN_USER, NORDVPN_PASS and adjust HOST_IP
 docker compose up -d
 ```
 
