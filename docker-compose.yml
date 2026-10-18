@@ -1,10 +1,8 @@
 services:
 
-  # ─────────────────────────────────────────────
+  # =============================================
   # qBittorrent + OpenVPN (NordVPN)
-  # All torrent traffic goes through the VPN.
-  # Radarr/Sonarr reach it via internal network.
-  # ─────────────────────────────────────────────
+  # =============================================
   qbittorrent:
     image: binhex/arch-qbittorrentvpn:latest
     container_name: qbittorrent
@@ -13,22 +11,22 @@ services:
     devices:
       - /dev/net/tun:/dev/net/tun
     ports:
-      - "8080:8080"     # qBittorrent Web UI
-      - "8118:8118"     # Privoxy (optional, can be ignored)
+      - "8080:8080"
+      - "8118:8118"
     volumes:
       - ./config/qbittorrent:/config
       - ./data/torrents:/data/torrents
-      - ./vpn:/config/openvpn   # Put your .ovpn files here
+      - ./vpn:/config/openvpn
     environment:
-      - VPN_ENABLED=yes
-      - VPN_PROV=custom          # NordVPN = custom provider
+      - VPN_ENABLED=${VPN_ENABLED:-yes}
+      - VPN_PROV=custom
       - VPN_CLIENT=openvpn
       - VPN_USER=${NORDVPN_USER}
       - VPN_PASS=${NORDVPN_PASS}
       - STRICT_PORT_FORWARD=no
       - ENABLE_PRIVOXY=yes
-      - LAN_NETWORK=192.168.1.0/24   # ← adjust to your local subnet
-      - NAME_SERVERS=103.86.96.100,103.86.99.100  # NordVPN DNS
+      - LAN_NETWORK=192.168.1.0/24
+      - NAME_SERVERS=103.86.96.100,103.86.99.100
       - PUID=${PUID}
       - PGID=${PGID}
       - UMASK=002
@@ -38,15 +36,24 @@ services:
     networks:
       - medianet
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8080/"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
 
-  # ─────────────────────────────────────────────
+  # =============================================
   # Prowlarr — indexer manager
-  # ─────────────────────────────────────────────
+  # =============================================
   prowlarr:
     image: lscr.io/linuxserver/prowlarr:latest
     container_name: prowlarr
     ports:
       - "9696:9696"
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
     volumes:
       - ./config/prowlarr:/config
     environment:
@@ -57,10 +64,15 @@ services:
     networks:
       - medianet
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:9696/ping"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
 
-  # ─────────────────────────────────────────────
+  # =============================================
   # Radarr — movie automation
-  # ─────────────────────────────────────────────
+  # =============================================
   radarr:
     image: lscr.io/linuxserver/radarr:latest
     container_name: radarr
@@ -68,7 +80,7 @@ services:
       - "7878:7878"
     volumes:
       - ./config/radarr:/config
-      - ./data:/data          # needs full /data for hardlinks to work
+      - ./data:/data
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
@@ -77,10 +89,15 @@ services:
     networks:
       - medianet
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:7878/ping"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
 
-  # ─────────────────────────────────────────────
+  # =============================================
   # Sonarr — TV series automation
-  # ─────────────────────────────────────────────
+  # =============================================
   sonarr:
     image: lscr.io/linuxserver/sonarr:latest
     container_name: sonarr
@@ -97,10 +114,15 @@ services:
     networks:
       - medianet
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8989/ping"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
 
-  # ─────────────────────────────────────────────
+  # =============================================
   # Bazarr — automatic subtitles
-  # ─────────────────────────────────────────────
+  # =============================================
   bazarr:
     image: lscr.io/linuxserver/bazarr:latest
     container_name: bazarr
@@ -117,16 +139,21 @@ services:
     networks:
       - medianet
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-s", "http://127.0.0.1:6767/"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
 
-  # ─────────────────────────────────────────────
-  # Jellyfin — media server with NVIDIA GPU
-  # ─────────────────────────────────────────────
+  # =============================================
+  # Jellyfin — media server (NVIDIA GPU)
+  # =============================================
   jellyfin:
     image: lscr.io/linuxserver/jellyfin:latest
     container_name: jellyfin
     ports:
-      - "8096:8096"     # Web UI
-      - "8920:8920"     # HTTPS (optional)
+      - "8096:8096"
+      - "8920:8920"
     volumes:
       - ./config/jellyfin:/config
       - ./data/media:/data/media
@@ -137,7 +164,7 @@ services:
       - TZ=${TZ}
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=all
-    runtime: nvidia           # enables NVIDIA GPU passthrough
+    runtime: nvidia
     deploy:
       resources:
         reservations:
@@ -148,26 +175,39 @@ services:
     networks:
       - medianet
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8096/"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
-  # ─────────────────────────────────────────────
-  # FlareSolverr — Cloudflare bypass proxy
-  # In Prowlarr: add as indexer proxy at http://flaresolverr:8191
-  # ─────────────────────────────────────────────
+  # =============================================
+  # FlareSolverr — Cloudflare bypass
+  # =============================================
   flaresolverr:
     image: ghcr.io/flaresolverr/flaresolverr:latest
     container_name: flaresolverr
     ports:
       - "8191:8191"
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
     environment:
       - LOG_LEVEL=info
       - TZ=${TZ}
     networks:
       - medianet
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8191/"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
 
-  # ─────────────────────────────────────────────
-  # Homer — homelab dashboard
-  # ─────────────────────────────────────────────
+  # =============================================
+  # Homer — dashboard
+  # =============================================
   homer:
     image: b4bz/homer:latest
     container_name: homer
@@ -181,6 +221,79 @@ services:
     networks:
       - medianet
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+
+  # =============================================
+  # Nginx Proxy Manager — reverse proxy
+  # =============================================
+  nginx-proxy-manager:
+    image: jc21/nginx-proxy-manager:latest
+    container_name: nginx-proxy-manager
+    ports:
+      - "80:80"
+      - "443:443"
+      - "81:81"
+    volumes:
+      - ./config/npm/data:/data
+      - ./config/npm/letsencrypt:/etc/letsencrypt
+    networks:
+      - medianet
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:81/"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+
+  # =============================================
+  # Diun — Docker image update notifier
+  # =============================================
+  diun:
+    image: crazymax/diun:latest
+    container_name: diun
+    volumes:
+      - ./config/diun/diun.yml:/diun.yml:ro
+      - ./config/diun/data:/data
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - TZ=${TZ}
+      - DISCORD_WEBHOOK=${DISCORD_WEBHOOK}
+    networks:
+      - medianet
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "diun", "--version"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+
+  # =============================================
+  # Jellyseerr — media request & discovery (Jellyfin)
+  # =============================================
+  jellyseerr:
+    image: fallenbagel/jellyseerr:latest
+    container_name: jellyseerr
+    ports:
+      - "5055:5055"
+    volumes:
+      - ./config/jellyseerr:/app/config
+    environment:
+      - LOG_LEVEL=info
+      - TZ=${TZ}
+      - PORT=5055
+    networks:
+      - medianet
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:5055/"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
 networks:
   medianet:
