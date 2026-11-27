@@ -28,7 +28,7 @@ set +a
 HOST_IP="${HOST_IP:-192.168.1.100}"
 
 echo "==> Creation des dossiers"
-mkdir -p config/{qbittorrent,radarr,sonarr,prowlarr,bazarr,jellyfin,homer,npm/{data,letsencrypt},diun/data,seerr}
+mkdir -p config/{qbittorrent,radarr,sonarr,prowlarr,bazarr,jellyfin,homer,diun/data,seerr}
 mkdir -p data/torrents data/media
 mkdir -p vpn
 

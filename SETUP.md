@@ -336,7 +336,7 @@ for Radarr/Sonarr in `config/seerr/settings.json`.
 | Jellyfin           | http://localhost:8096      | Media server (NVIDIA GPU)      |
 | Seerr              | http://localhost:5055      | Requests & discovery           |
 | Homer              | http://localhost:8888      | Dashboard                      |
-| Nginx Proxy Manager| http://localhost:81        | Reverse proxy admin            |
+| FlareSolverr       | http://localhost:8191      | Cloudflare bypass (1337x/EZTV) |
 
 ---
 

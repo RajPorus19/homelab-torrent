@@ -20,8 +20,7 @@ Torrent traffic is routed through NordVPN via OpenVPN.
 | `8920` | **Jellyfin** | `lscr.io/linuxserver/jellyfin:10.11.8ubu2404-ls27` | Media server Web UI (HTTPS, optional) |
 | `5055` | **Seerr** | `ghcr.io/seerr-team/seerr:latest` | Requests & discovery (successor to Jellyseerr) |
 | `8888` | **Homer** | `b4bz/homer:v24.05.1` | Homelab dashboard |
-| `8191` | **FlareSolverr** | `ghcr.io/flaresolverr/flaresolverr:latest` | Cloudflare bypass for Prowlarr |
-| `81` | **Nginx Proxy Manager** | `jc21/nginx-proxy-manager:latest` | Reverse proxy admin UI (80/443 also mapped) |
+| `8191` | **FlareSolverr** | `ghcr.io/flaresolverr/flaresolverr:latest` | Cloudflare bypass for Prowlarr (used by 1337x and EZTV) |
 
 All ports are mapped `host:container` 1-to-1. Access any service from your LAN via `http://<host-ip>:<port>`.
 
@@ -86,11 +85,6 @@ Place your `.ovpn` files in `./vpn/`. Radarr and Sonarr reach qBittorrent over t
 - No web UI — sends Discord notifications when a container image has an update.
 - Config: `config/diun/diun.yml` (template in `config-templates/diun/`).
 - Set `DISCORD_WEBHOOK` in `.env` to enable; leave empty to disable.
-
-### Nginx Proxy Manager (`nginx-proxy-manager`)
-- **Admin UI:** `http://<host-ip>:81`
-- **Default login:** `admin@example.com` / `changeme` — change immediately
-- Reverse proxy for exposing services with TLS. Ports 80/443 are mapped.
 
 ---
 

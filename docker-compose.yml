@@ -228,28 +228,6 @@ services:
       retries: 3
 
   # =============================================
-  # Nginx Proxy Manager — reverse proxy
-  # =============================================
-  nginx-proxy-manager:
-    image: jc21/nginx-proxy-manager:latest
-    container_name: nginx-proxy-manager
-    ports:
-      - "80:80"
-      - "443:443"
-      - "81:81"
-    volumes:
-      - ./config/npm/data:/data
-      - ./config/npm/letsencrypt:/etc/letsencrypt
-    networks:
-      - medianet
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-sf", "http://localhost:81/"]
-      interval: 60s
-      timeout: 10s
-      retries: 3
-
-  # =============================================
   # Diun — Docker image update notifier
   # =============================================
   diun:

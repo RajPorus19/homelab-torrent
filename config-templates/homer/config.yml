@@ -99,12 +99,6 @@ services:
   - name: "Tools"
     icon: "fas fa-tools"
     items:
-      - name: "Nginx Proxy Manager"
-        subtitle: "Reverse proxy"
-        url: "http://__HOST_IP__:81"
-        logo: "https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/nginx-proxy-manager.png"
-        tag: "tool"
-
       - name: "Homer"
         subtitle: "This dashboard"
         url: "http://__HOST_IP__:8888"
