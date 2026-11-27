@@ -18,7 +18,10 @@ Torrent traffic is routed through NordVPN via OpenVPN.
 | `6767` | **Bazarr** | `lscr.io/linuxserver/bazarr:v1.5.6-ls342` | Automatic subtitle downloader for movies and series |
 | `8096` | **Jellyfin** | `lscr.io/linuxserver/jellyfin:10.11.8ubu2404-ls27` | Media server Web UI (HTTP) |
 | `8920` | **Jellyfin** | `lscr.io/linuxserver/jellyfin:10.11.8ubu2404-ls27` | Media server Web UI (HTTPS, optional) |
+| `5055` | **Seerr** | `ghcr.io/seerr-team/seerr:latest` | Requests & discovery (successor to Jellyseerr) |
 | `8888` | **Homer** | `b4bz/homer:v24.05.1` | Homelab dashboard |
+| `8191` | **FlareSolverr** | `ghcr.io/flaresolverr/flaresolverr:latest` | Cloudflare bypass for Prowlarr |
+| `81` | **Nginx Proxy Manager** | `jc21/nginx-proxy-manager:latest` | Reverse proxy admin UI (80/443 also mapped) |
 
 All ports are mapped `host:container` 1-to-1. Access any service from your LAN via `http://<host-ip>:<port>`.
 
@@ -52,29 +55,69 @@ Place your `.ovpn` files in `./vpn/`. Radarr and Sonarr reach qBittorrent over t
 - **URL:** `http://<host-ip>:6767`
 - **Default login:** none — no authentication enabled by default, set one up in Settings > Security
 - Watches the Radarr/Sonarr libraries and automatically downloads matching subtitles.
+- Configured for **French first, English fallback** — see [Section 9](#9-subtitles-fren-bazarr).
 
 ### Jellyfin (`jellyfin`)
 - **URL:** `http://<host-ip>:8096`
 - **Default login:** none — creates admin account on first-run wizard
 - Streams the media library to any device on your LAN (or remotely via a reverse proxy).
-Configured with NVIDIA GPU passthrough for hardware transcoding.
+- Configured with NVIDIA GPU passthrough for hardware transcoding.
+
+### Seerr (`seerr`)
+- **URL:** `http://<host-ip>:5055`
+- **Default login:** none — first-run wizard, sign in with your **Jellyfin** account
+- Successor to Jellyseerr/Overseerr (same project, renamed + unified). Request UI for
+  movies and series; pushes approved requests into Radarr/Sonarr.
+- **Migrating from Jellyseerr:** automatic — just point the volume at your old config
+  folder and start the container. No manual steps. Data (users, requests, servers,
+  Jellyfin link) is preserved.
+
+> ⚠️ Seerr runs as UID **1000** (`node` user). Its config folder must be owned by
+> 1000:1000 or the container crashes on boot:
+> `docker run --rm -v ./config/seerr:/d alpine chown -R 1000:1000 /d`
 
 ### Homer (`homer`)
 - **URL:** `http://<host-ip>:8888`
 - **Default login:** none — public dashboard, no auth
 - Central dashboard linking all services. Config lives at `./config/homer/config.yml`.
+  `bootstrap.sh` generates it from `config-templates/homer/config.yml` with your `HOST_IP`.
+
+### Diun (`diun`)
+- No web UI — sends Discord notifications when a container image has an update.
+- Config: `config/diun/diun.yml` (template in `config-templates/diun/`).
+- Set `DISCORD_WEBHOOK` in `.env` to enable; leave empty to disable.
+
+### Nginx Proxy Manager (`nginx-proxy-manager`)
+- **Admin UI:** `http://<host-ip>:81`
+- **Default login:** `admin@example.com` / `changeme` — change immediately
+- Reverse proxy for exposing services with TLS. Ports 80/443 are mapped.
 
 ---
 
 ## Quick Start
 
 ```bash
-cp .env.sample .env   # fill in NORDVPN_USER, NORDVPN_PASS and adjust HOST_IP
+git clone <this-repo> homelab && cd homelab
+cp env.sample .env      # fill in NORDVPN_USER, NORDVPN_PASS, HOST_IP, TZ, LAN_NETWORK
+./bootstrap.sh          # creates folders + renders config templates
 docker compose up -d
 ```
 
-Verify all containers are healthy:
+`bootstrap.sh` is idempotent — it only creates what's missing and never overwrites
+an existing config. After a couple of minutes:
 
 ```bash
-docker compose ps
+docker compose ps       # everything should report (healthy)
 ```
+
+Then configure each app — see `SETUP.md`:
+- **Radarr/Sonarr** → add qBittorrent as download client (§6)
+- **Bazarr** → enable `subf2m` + `subtitlecat`, set FR→EN profile (§9)
+- **French releases** → VF quality profiles + custom formats (§10)
+- **Seerr** → sign in with your Jellyfin account
+
+### What is NOT in this repo
+
+`.env`, `config/` and `data/` are gitignored — they hold API keys, credentials and
+your media. `config-templates/` holds the versioned, sanitised versions of the
+configs that can be regenerated (Homer dashboard, Diun).

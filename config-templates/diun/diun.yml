@@ -1,0 +1,27 @@
+# Diun — Docker Image Update Notifier
+# Docs: https://crazymax.dev/diun/
+# Copie vers config/diun/diun.yml
+# DISCORD_WEBHOOK est lu depuis .env (docker compose l'injecte)
+
+db:
+  path: /data/diun.db
+
+watch:
+  workers: 10
+  schedule: "0 */6 * * *"
+  firstCheckNotif: false
+
+notif:
+  discord:
+    webhookURL: "${DISCORD_WEBHOOK}"
+    mentions:
+      - "@here"
+    timeout: 10s
+    templateBody: |
+      **Mise a jour dispo !**
+      {{ .Entry.Image }}: {{ .Entry.Manifest.Tag }} -> {{ .Manifest.Tag }} ({{ .Manifest.Platform }})
+
+providers:
+  docker:
+    watchByDefault: true
+    watchStopped: false

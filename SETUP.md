@@ -183,20 +183,160 @@ docker compose pull && docker compose up -d
 
 # Restart one service
 docker compose restart sonarr
+
+# Health of everything
+docker compose ps
 ```
 
 ---
 
-## Service Map
+## 9. Subtitles (FR/EN) — Bazarr
 
-| Service       | URL                        | Purpose                        |
-|---------------|----------------------------|--------------------------------|
-| qBittorrent   | http://localhost:8080      | Download client (behind VPN)   |
-| Prowlarr      | http://localhost:9696      | Indexer/tracker manager        |
-| Radarr        | http://localhost:7878      | Movie automation               |
-| Sonarr        | http://localhost:8989      | TV show automation             |
-| Bazarr        | http://localhost:6767      | Subtitle automation            |
-| Jellyfin      | http://localhost:8096      | Media server (NVIDIA GPU)      |
+Bazarr is wired to Radarr + Sonarr but ships with **no providers enabled**, so it
+does nothing until configured. Target: **French first, English fallback**.
+
+### 9.1 Enable the free providers (no account needed)
+
+Edit `config/bazarr/config/config.yaml` — the settings API silently drops this
+list, so the file is the only reliable path:
+
+```yaml
+general:
+  enabled_providers:
+  - subf2m
+  - subtitlecat
+```
+
+Then restart: `docker compose restart bazarr`.
+
+### 9.2 ⚠️ subf2m self-throttles for 12h without a User-Agent
+
+Log signature:
+```
+Throttling subf2m for 12 hours, because of:
+ConfigurationError. Exception info: "'User-agent config missing'"
+```
+
+Fix in the same file:
+```yaml
+subf2m:
+  user_agent: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
+  verify_ssl: true
+```
+
+### 9.3 ⚠️ The throttle survives a restart
+
+It lives in a file, **not** in the DB: `config/bazarr/config/throttled_providers.dat`.
+Delete it after fixing the cause, or subf2m stays dead for the full 12 hours
+even though the config is now correct.
+
+```bash
+rm -f config/bazarr/config/throttled_providers.dat
+docker compose restart bazarr
+```
+
+### 9.4 Language profile: French then English
+
+`table_languages_profiles.items` is a JSON string in `config/bazarr/db/bazarr.db`.
+Update profile **1** in place so every existing item picks it up:
+
+```python
+items = [
+ {"id":1,"language":"fr","audio_exclude":"False","audio_only_include":"False","hi":"False","forced":"False"},
+ {"id":2,"language":"en","audio_exclude":"False","audio_only_include":"False","hi":"False","forced":"False"},
+]
+UPDATE table_languages_profiles SET name='French then English', tag='french-english',
+  items=?, cutoff=NULL, mustContain='[]', mustNotContain='[]' WHERE profileId=1
+```
+
+Back up `bazarr.db` first, stop Bazarr before writing, restart after.
+**Order matters** — first item is the preferred language.
+
+### 9.5 Verify it actually works
+
+`GET /api/movies` returns `missing_subtitles: []` even when FR is absent — it is
+**not** a reliable health signal. Do a real provider search instead:
+
+```
+GET /api/providers/movies?radarrid=<radarrId>&language=fr&hi=False&forced=False&original_format=False
+```
+
+Params are **lowercase** (`radarrid`), and `hi`/`forced`/`original_format` are
+required or you get a 400. `radarrid` is the **Radarr** id, not Bazarr's row id.
+The endpoint returns all languages — filter client-side on `s['language']=='fr'`.
+
+Expected working output: `{'en': 30, 'fr': 5}` from providers `subf2m` + `subtitlecat`.
+
+> For wider FR coverage, add an **OpenSubtitles.com** account (biggest FR
+> catalogue) in Settings → Providers. Requires registration.
+
+---
+
+## 10. French releases (VF) — quality profiles
+
+Radarr has **no language profiles** (`/api/v3/languageprofile` → 404), unlike
+Sonarr. So "pick FR or EN at request time" is done with **quality profiles that
+enforce French** via custom formats. Two extra profiles are created in both apps:
+
+| Profile | id | Qualities | Upgrade | Cutoff |
+|---|---|---|---|---|
+| `4K préféré - 1080p fallback` | 7 | 1080p + 2160p | yes | Remux-2160p |
+| **`4K VF - 1080p VF fallback`** | 8 | 1080p + 2160p | yes | Remux-2160p |
+| **`1080p VF`** | 9 | 1080p only | no | Bluray-1080p |
+
+### 10.1 Custom formats that gate on language
+
+| Custom format | Score |
+|---|---|
+| `VFQ (Quebec French)` | +60 |
+| `VFF (French France)` | +60 |
+| `TRUEFRENCH` | +50 |
+| `VF (French)` | +40 |
+| `MULTI (French likely)` | +15 |
+| `Not French (penalty)` | **−100** |
+
+An English-only release scores −100 and is rejected. A VFF/VFQ release scores +60
+and wins. Set `minCustomFormatScore: 1` on the profile so at least one French
+format must match.
+
+### 10.2 ⚠️ Group ids differ between Radarr and Sonarr
+
+`cutoff` is a **quality-group** id, not a `/qualitydefinition` id, and the two apps
+number them differently:
+
+| Group | Radarr | Sonarr |
+|---|---|---|
+| `Remux-2160p` / `Bluray-2160p Remux` | **31** | **21** |
+| `Bluray-1080p` | 7 | 7 |
+
+Using Radarr's `31` on Sonarr fails with
+`Cutoff must be an allowed quality or group`. Read the ids from the app's own
+profile rather than hardcoding.
+
+### 10.3 Selecting FR in Seerr
+
+In Seerr, the profile list is the language selector. Choose
+**`4K VF - 1080p VF fallback`** to get French. A native "FR/EN dropdown" is not
+possible for movies — Radarr doesn't expose language profiles.
+
+To make VF the default for every request, set Seerr's `activeProfileId` to `8`
+for Radarr/Sonarr in `config/seerr/settings.json`.
+
+---
+
+## 11. Service Map
+
+| Service            | URL                        | Purpose                        |
+|--------------------|----------------------------|--------------------------------|
+| qBittorrent        | http://localhost:8080      | Download client (behind VPN)   |
+| Prowlarr           | http://localhost:9696      | Indexer/tracker manager        |
+| Radarr             | http://localhost:7878      | Movie automation               |
+| Sonarr             | http://localhost:8989      | TV show automation             |
+| Bazarr             | http://localhost:6767      | Subtitle automation            |
+| Jellyfin           | http://localhost:8096      | Media server (NVIDIA GPU)      |
+| Seerr              | http://localhost:5055      | Requests & discovery           |
+| Homer              | http://localhost:8888      | Dashboard                      |
+| Nginx Proxy Manager| http://localhost:81        | Reverse proxy admin            |
 
 ---
 

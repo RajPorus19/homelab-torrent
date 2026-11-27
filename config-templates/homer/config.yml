@@ -1,0 +1,112 @@
+---
+# Homer dashboard — template
+# Copie vers config/homer/config.yml puis remplace __HOST_IP__ par ton IP LAN
+# (ou mets ton IP directement, ex. 192.168.1.100)
+
+title: "Homelab"
+subtitle: "Media Stack"
+logo: "logo.png"
+
+header: true
+footer: false
+
+colors:
+  light:
+    highlight-primary: "#3367d6"
+    highlight-secondary: "#4285f4"
+    highlight-hover: "#5a95f5"
+    background: "#f2f2f2"
+    card-background: "#ffffff"
+    text: "#363636"
+    text-header: "#ffffff"
+    text-title: "#303030"
+    text-subtitle: "#424242"
+    card-shadow: rgba(0, 0, 0, 0.1)
+    link: "#3273dc"
+    link-hover: "#363636"
+  dark:
+    highlight-primary: "#3367d6"
+    highlight-secondary: "#4285f4"
+    highlight-hover: "#5a95f5"
+    background: "#131313"
+    card-background: "#2b2b2b"
+    text: "#eaeaea"
+    text-header: "#ffffff"
+    text-title: "#fafafa"
+    text-subtitle: "#f2f2f2"
+    card-shadow: rgba(0, 0, 0, 0.4)
+    link: "#3273dc"
+    link-hover: "#ffdd57"
+
+services:
+  - name: "Media"
+    icon: "fas fa-film"
+    items:
+      - name: "Jellyfin"
+        subtitle: "Media server"
+        url: "http://__HOST_IP__:8096"
+        logo: "https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/jellyfin.png"
+        tag: "media"
+
+      - name: "Seerr"
+        subtitle: "Requests & discovery"
+        url: "http://__HOST_IP__:5055"
+        logo: "https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/overseerr.png"
+        tag: "media"
+
+  - name: "Automation"
+    icon: "fas fa-robot"
+    items:
+      - name: "Radarr"
+        subtitle: "Movie automation"
+        url: "http://__HOST_IP__:7878"
+        logo: "https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/radarr.png"
+        tag: "arr"
+
+      - name: "Sonarr"
+        subtitle: "TV series automation"
+        url: "http://__HOST_IP__:8989"
+        logo: "https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/sonarr.png"
+        tag: "arr"
+
+      - name: "Prowlarr"
+        subtitle: "Indexer manager"
+        url: "http://__HOST_IP__:9696"
+        logo: "https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/prowlarr.png"
+        tag: "arr"
+
+      - name: "Bazarr"
+        subtitle: "Subtitle downloader"
+        url: "http://__HOST_IP__:6767"
+        logo: "https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/bazarr.png"
+        tag: "arr"
+
+  - name: "Downloads"
+    icon: "fas fa-download"
+    items:
+      - name: "qBittorrent"
+        subtitle: "Torrent client (VPN)"
+        url: "http://__HOST_IP__:8080"
+        logo: "https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/qbittorrent.png"
+        tag: "download"
+
+      - name: "FlareSolverr"
+        subtitle: "Cloudflare bypass"
+        url: "http://__HOST_IP__:8191"
+        logo: "https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/flaresolverr.png"
+        tag: "proxy"
+
+  - name: "Tools"
+    icon: "fas fa-tools"
+    items:
+      - name: "Nginx Proxy Manager"
+        subtitle: "Reverse proxy"
+        url: "http://__HOST_IP__:81"
+        logo: "https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/nginx-proxy-manager.png"
+        tag: "tool"
+
+      - name: "Homer"
+        subtitle: "This dashboard"
+        url: "http://__HOST_IP__:8888"
+        logo: "https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/homer.png"
+        tag: "tool"

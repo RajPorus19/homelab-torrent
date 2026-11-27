@@ -1,4 +1,18 @@
+# Secrets & runtime state — JAMAIS committes
 .env
 vpn/
+
+# Config runtime des services (generee au 1er lancement, contient des cles API)
 config/
+
+# Medias et torrents
 data/
+
+# Anciens dossiers (compat)
+config/jellyseerr/
+
+# Fichiers temporaires / logs
+*.log
+reencode.log
+__pycache__/
+*.pyc
