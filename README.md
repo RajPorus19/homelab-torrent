@@ -83,8 +83,14 @@ Place your `.ovpn` files in `./vpn/`. Radarr and Sonarr reach qBittorrent over t
 
 ### Diun (`diun`)
 - No web UI — sends Discord notifications when a container image has an update.
+- **Notification only** — it never pulls or restarts anything. Update manually:
+  `docker compose pull && docker compose up -d`
 - Config: `config/diun/diun.yml` (template in `config-templates/diun/`).
-- Set `DISCORD_WEBHOOK` in `.env` to enable; leave empty to disable.
+- Set `DISCORD_WEBHOOK` in `.env` **before** running `bootstrap.sh` — it writes the URL
+  into `diun.yml` (permissions 600), since Diun does not expand `${VAR}` in its YAML.
+- ⚠️ The `templateBody` must only reference `.Entry.*`. Using `.Manifest.Tag` makes the
+  template fail to render (`can't evaluate field Manifest`) and **no notification is ever
+  sent** — the scan still logs `New image found`, so the failure is easy to miss.
 
 ---
 

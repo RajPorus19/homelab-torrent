@@ -42,10 +42,18 @@ else
     echo "    homer/config.yml deja present, conserve"
 fi
 
-# Diun
+# Diun — le webhook doit etre ecrit en dur (diun ne lit pas ${VAR} dans son YAML)
 if [ ! -f config/diun/diun.yml ]; then
-    cp config-templates/diun/diun.yml config/diun/diun.yml
-    echo "    diun/diun.yml cree"
+    if [ -n "${DISCORD_WEBHOOK:-}" ]; then
+        sed "s|DISCORD_WEBHOOK_URL|${DISCORD_WEBHOOK}|" config-templates/diun/diun.yml > config/diun/diun.yml
+        chmod 600 config/diun/diun.yml
+        echo "    diun/diun.yml cree (webhook injecte depuis .env)"
+    else
+        cp config-templates/diun/diun.yml config/diun/diun.yml
+        chmod 600 config/diun/diun.yml
+        echo "    diun/diun.yml cree SANS webhook"
+        echo "      -> renseigne DISCORD_WEBHOOK dans .env puis relance bootstrap.sh"
+    fi
 else
     echo "    diun/diun.yml deja present, conserve"
 fi

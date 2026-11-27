@@ -1,7 +1,9 @@
 # Diun — Docker Image Update Notifier
 # Docs: https://crazymax.dev/diun/
-# Copie vers config/diun/diun.yml
-# DISCORD_WEBHOOK est lu depuis .env (docker compose l'injecte)
+# Copie vers config/diun/diun.yml puis remplace DISCORD_WEBHOOK_URL par ton URL
+#
+# ⚠️ Diun ne substitue PAS ${VAR} dans son YAML. L'URL doit etre ecrite en dur
+#    ci-dessous. comme config/ est gitignore, elle ne partira pas sur GitHub.
 
 db:
   path: /data/diun.db
@@ -9,17 +11,23 @@ db:
 watch:
   workers: 10
   schedule: "0 */6 * * *"
-  firstCheckNotif: false
+  # true = notifie des le premier scan (sinon silencieux au 1er passage)
+  firstCheckNotif: true
+  # scan immediat au demarrage du conteneur
+  runOnStartup: true
+  # compare les digests reels (plus fiable que les tags mouvants comme :latest)
+  compareDigest: true
 
 notif:
   discord:
-    webhookURL: "${DISCORD_WEBHOOK}"
-    mentions:
-      - "@here"
+    # Colle ton URL de webhook Discord ici, entre les guillemets
+    webhookURL: "DISCORD_WEBHOOK_URL"
     timeout: 10s
+    # ⚠️ N'utilise QUE .Entry.* — .Manifest.Tag n'existe pas et fait echouer
+    #    le rendu ("can't evaluate field Manifest"), donc aucune notification.
     templateBody: |
       **Mise a jour dispo !**
-      {{ .Entry.Image }}: {{ .Entry.Manifest.Tag }} -> {{ .Manifest.Tag }} ({{ .Manifest.Platform }})
+      {{ .Entry.Image }} : {{ .Entry.Manifest.Tag }} disponible
 
 providers:
   docker:
