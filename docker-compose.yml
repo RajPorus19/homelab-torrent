@@ -80,7 +80,7 @@ services:
       - "7878:7878"
     volumes:
       - ./config/radarr:/config
-      - ./data:/data
+      - /data:/data
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
@@ -105,7 +105,7 @@ services:
       - "8989:8989"
     volumes:
       - ./config/sonarr:/config
-      - ./data:/data
+      - /data:/data
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
@@ -130,7 +130,7 @@ services:
       - "6767:6767"
     volumes:
       - ./config/bazarr:/config
-      - ./data/media:/data/media
+      - /data:/data
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
@@ -156,7 +156,7 @@ services:
       - "8920:8920"
     volumes:
       - ./config/jellyfin:/config
-      - ./data/media:/data/media
+      - /data/media:/data/media
     environment:
       - PUID=${PUID}
       - PGID=${PGID}

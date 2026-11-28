@@ -60,6 +60,38 @@ mkdir -p data/{torrents/{movies,tv},media/{movies,tv}}
 mkdir -p vpn
 ```
 
+### Split-host layout (qBittorrent on another machine)
+
+If qBittorrent runs on a **different host** than the *arr apps, do not use a
+local `./data` bind. Both `/data/torrents` and `/data/media` must live on the
+**same filesystem** so Radarr/Sonarr can hardlink instead of copy.
+
+On the download host (example: `rainbowdash`):
+```bash
+# torrents and media as siblings under one exported root
+mkdir -p ~/qbittorrent/data/{torrents,media}
+echo "$HOME/qbittorrent/data /data none bind 0 0" | sudo tee -a /etc/fstab
+sudo mount --bind ~/qbittorrent/data /data
+echo '/data 192.168.1.0/24(rw,sync,no_subtree_check,all_squash,anonuid=1000,anongid=1000,fsid=0,insecure)' \
+  | sudo tee /etc/exports
+sudo exportfs -rav && sudo sv restart nfs-server
+```
+
+On the *arr host, mount it as `/data` and add an fstab entry:
+```
+192.168.1.104:/data /data nfs vers=3,rsize=524288,wsize=524288,hard,nolock,_netdev,auto 0 0
+```
+
+Then the compose volumes point at the absolute path (`- /data:/data`) rather
+than `./data:/data`. Verify hardlinks after the first import — every file
+should report `links=2`:
+```bash
+find /data/media -name '*.mkv' -exec stat -c '%h' {} \; | sort | uniq -c
+```
+Use NFS **v3** for the mount: NFSv4 on a client without `rpc.idmapd` fails with
+`mount.nfs: failed to apply fstab options`.
+
+
 ---
 
 ## 3. NordVPN OpenVPN Setup
